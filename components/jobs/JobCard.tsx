@@ -4,6 +4,13 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { MapPin, Bookmark, BookmarkCheck, FileCheck, Trash2, Calendar, ExternalLink, Briefcase, Building2, Laptop, GraduationCap, Globe, Home, Rocket, Award, Heart, Stethoscope, ShoppingCart, Factory, Truck, Banknote, PenTool, Palette, Music, Camera, Utensils, FlaskConical, Cpu, BarChart3 } from 'lucide-react';
 import { theme } from '@/lib/theme';
+import { getCountrySlug } from '@/lib/countrySlugMap';
+
+function buildJobUrl(slug: string, country?: string[]): string {
+  const first = (country || []).find(c => c.toLowerCase() !== 'global');
+  if (!first) return `/jobs/${slug}`;
+  return `/jobs/${getCountrySlug(first)}/${slug}`;
+}
 
 const sectorIcons: Record<string, React.ElementType> = {
   technology: Laptop,
@@ -357,7 +364,7 @@ export default function JobCard({
             </button>
 
             {/* Apply Button */}
-            <Link href={`/jobs/${job.slug}`} prefetch={false} className="block">
+            <Link href={buildJobUrl(job.slug, job.country)} prefetch={false} className="block">
               <button
                 className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all hover:scale-105 ${
                   isApplied 

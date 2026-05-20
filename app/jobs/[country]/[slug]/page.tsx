@@ -4,9 +4,6 @@ import JobClient from './JobClient';
 import { Metadata } from 'next';
 import { cache } from 'react';
 
-// force-static + revalidate=false means: render once per slug on first request,
-// cache forever on Vercel. Cloudflare then caches the HTML on top indefinitely.
-// Only re-renders if you manually call revalidatePath('/jobs/[slug]') when a job changes.
 export const revalidate = false;
 export const dynamic = 'force-static';
 
@@ -17,7 +14,23 @@ const COMPANIES_URL = 'https://jobs-api.joevicspro.workers.dev/companies';
 // ─── Table for this site ──────────────────────────────────────────────────────
 const JOBS_TABLE = 'jobs_nigeria';
 
-// Plain REST fetch — no cookies, no request state, fully static-compatible
+
+// ─── Helper: derive a URL-safe country slug from a job record ─────────────────
+function getJobCountrySlug(job: any): string {
+  const countryArr: string[] = Array.isArray(job.country) ? job.country : [];
+  const first = countryArr.find((c) => c.toLowerCase() !== 'global');
+  if (first) {
+    return first.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+  if (job.location && typeof job.location === 'object') {
+    const c = job.location.country || job.location.countries?.[0];
+    if (c && c.toLowerCase() !== 'global') {
+      return c.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+  }
+  return 'global';
+}
+
 const getJob = cache(async (slug: string) => {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/${JOBS_TABLE}?slug=eq.${slug}&select=*&limit=1`,
@@ -36,9 +49,7 @@ const getJob = cache(async (slug: string) => {
 
 const getCompanies = cache(async () => {
   try {
-    const res = await fetch(COMPANIES_URL, {
-      next: { revalidate: 604800 },
-    });
+    const res = await fetch(COMPANIES_URL, { next: { revalidate: 604800 } });
     const data = await res.json();
     return data.companies || [];
   } catch (error) {
@@ -47,19 +58,21 @@ const getCompanies = cache(async () => {
   }
 });
 
-// Plain REST fetch for related jobs — queries jobs_nigeria table
+/**
+ * Related jobs: fetches up to 10 jobs in the same category.
+ */
 const getRelatedJobs = cache(async (currentJob: any) => {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const dateStr = thirtyDaysAgo.toISOString();
 
   const params = new URLSearchParams({
-    select: 'id,title,company,location,category,slug,status,deadline,created_at',
+    select: 'id,title,company,location,country,category,slug,status,deadline,created_at',
     category: `eq.${currentJob.category}`,
     id: `neq.${currentJob.id}`,
     created_at: `gte.${dateStr}`,
     order: 'created_at.desc',
-    limit: '10',
+    limit: '30', // fetch more so we have room to filter
   });
 
   const res = await fetch(
@@ -73,17 +86,27 @@ const getRelatedJobs = cache(async (currentJob: any) => {
     }
   );
   if (!res.ok) return [];
-  return await res.json();
+
+  const allJobs: any[] = await res.json();
+  return allJobs.slice(0, 10);
 });
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { country: string; slug: string };
+}): Promise<Metadata> {
   const job = await getJob(params.slug);
   if (!job) return { title: 'Job Not Found' };
 
-  const companyName = typeof job.company === 'string' ? job.company : job.company?.name || 'Company';
+  const companyName =
+    typeof job.company === 'string' ? job.company : job.company?.name || 'Company';
   const titleCore = `${job.title} at ${companyName}`;
   const description = job.description?.replace(/<[^>]*>/g, '').slice(0, 160) || '';
   const isNoIndex = job.status === 'expired';
+
+  const countrySlug = getJobCountrySlug(job);
+  const canonicalUrl = `https://www.jobmeter.app/jobs/${countrySlug}/${job.slug || job.id}`;
 
   return {
     title: titleCore,
@@ -93,7 +116,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
       type: 'website',
       siteName: 'JobMeter',
-      url: `https://www.jobmeter.app/jobs/${job.slug || job.id}`,
+      url: canonicalUrl,
     },
     twitter: {
       card: 'summary_large_image',
@@ -101,7 +124,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
     },
     alternates: {
-      canonical: `https://www.jobmeter.app/jobs/${job.slug || job.id}`,
+      canonical: canonicalUrl,
     },
     robots: isNoIndex
       ? { index: false, follow: true }
@@ -109,7 +132,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function JobPage({ params }: { params: { slug: string } }) {
+export default async function JobPage({
+  params,
+}: {
+  params: { country: string; slug: string };
+}) {
   const job = await getJob(params.slug);
   if (!job) notFound();
 
@@ -123,10 +150,10 @@ export default async function JobPage({ params }: { params: { slug: string } }) 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
-      <JobClient 
-        job={job} 
-        relatedJobs={relatedJobs} 
-        companies={companies} 
+      <JobClient
+        job={job}
+        relatedJobs={relatedJobs}
+        companies={companies}
       />
     </>
   );

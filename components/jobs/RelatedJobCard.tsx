@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { MapPin, DollarSign, Calendar } from 'lucide-react';
 import { theme } from '@/lib/theme';
+import { getCountrySlug } from '@/lib/countrySlugMap';
 
 interface RelatedJobCardProps {
   job: {
@@ -12,7 +13,14 @@ interface RelatedJobCardProps {
     location: any;
     salary_range?: any;
     posted_date: string;
+    country?: string[];
   };
+}
+
+function buildJobUrl(slug: string, country?: string[]): string {
+  const first = (country || []).find(c => c.toLowerCase() !== 'global');
+  const countrySlug = first ? getCountrySlug(first) : 'global';
+  return `/jobs/${countrySlug}/${slug}`;
 }
 
 export default function RelatedJobCard({ job }: RelatedJobCardProps) {
@@ -75,14 +83,9 @@ export default function RelatedJobCard({ job }: RelatedJobCardProps) {
     }
   };
 
-  // Debug log to verify link construction
-  if (typeof window !== 'undefined') {
-    console.log(`RelatedJobCard: Linking to /jobs/${job.slug} - Title: ${job.title}`);
-  }
-
   return (
     <Link
-      href={`/jobs/${job.slug}`}
+      href={buildJobUrl(job.slug, job.country)}
       className="block bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
       prefetch={true}
     >

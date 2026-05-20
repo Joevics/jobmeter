@@ -9,7 +9,6 @@ import {
   Calendar, 
   Briefcase, 
   Mail, 
-  Phone, 
   ExternalLink, 
   ArrowLeft, 
   Clock, 
@@ -24,20 +23,21 @@ import {
   ChevronRight,
   BookOpen,
   PenTool,
-  SendHorizonal,
+  X,
 } from 'lucide-react';
 import { theme } from '@/lib/theme';
 import UpgradeModal from '@/components/jobs/UpgradeModal';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import AdUnit from '@/components/ads/AdUnit';
-import TimedJobPopup from '@/components/TimedJobPopup';
 
 // ─── Ad slot IDs ───────────────────────────────────────────────────────────────
 const AD_SLOTS = {
   DISPLAY_TOP:        '4198231153',
   IN_ARTICLE:         '3314340925',
   DISPLAY_BOTTOM:     '9751041788',
+  SIDEBAR_MOBILE:     '9025117620',
+  ANCHOR_MOBILE:      '9010641928',
   BANNER_1:           '7253585934',
   BANNER_2:           '5940504265',
   BANNER_3:           '8348311222',
@@ -46,12 +46,12 @@ const AD_SLOTS = {
 // Namespaced per site so saved/applied state doesn't bleed across subdomains
 // if a user ever visits multiple sites on the same browser.
 const STORAGE_KEYS = {
-  SAVED_JOBS: 'ng_saved_jobs',
-  APPLIED_JOBS: 'ng_applied_jobs',
+  SAVED_JOBS: 'global_saved_jobs',
+  APPLIED_JOBS: 'global_applied_jobs',
 };
 
 // ─── Worker URL for similar/related jobs (client-side fallback) ───────────────
-// Replace this with the Nigeria-specific worker URL when ready.
+// Replace with the Global-specific worker URL when ready.
 const SIMILAR_JOBS_WORKER_URL = 'https://jobs-api.joevicspro.workers.dev/jobs';
 
 // ─── Featured Quizzes ────────────────────────────────────────────────────────
@@ -63,38 +63,59 @@ const FEATURED_QUIZZES = [
   { name: 'Access Bank Graduate Trainee Aptitude Test', url: '/tools/quiz/access-bank-graduate-trainee-assessment-test' },
 ];
 
-// ─── Blog Articles (Nigeria) ──────────────────────────────────────────────────
-// NOTE: Add your new blog URLs here. All entries in this list are eligible for
-// random selection — the old "region" filter has been removed for Nigeria.
-// Simply add new objects with { title, url } to this array.
+// ─── Blog Articles (Gulf) ─────────────────────────────────────────────────────
+// NOTE: Replace / add new blog URLs here. Remove the Nigerian-specific ones
+// and add Gulf-relevant articles. All entries are eligible for random selection.
 const ALL_BLOGS = [
-  { title: 'Should You Include Your Photo on Nigerian CVs?', url: '/blog/nigerian-cv-photo-pros-cons-recruiter-tips' },
-  { title: 'What to Wear to Interviews in Lagos vs Abuja', url: '/blog/lagos-vs-abuja-interview-attir-guide' },
-  { title: '10 Certifications That Actually Increase Your Salary in Nigeria', url: '/blog/10-certifications-that-actually-increase-your-salary-in-nigeria' },
-  { title: 'Free Online Courses Nigerians Can Take to Boost Employability', url: '/blog/boost-employability-free-online-courses-for-nigerians' },
   { title: 'How to Write a CV with No Experience', url: '/blog/write-a-cv-with-no-experience-beginners-guide' },
   { title: "How to Answer 'Tell Me About Yourself' in Job Interviews", url: '/blog/tell-me-about-yourself-job-interview-nigeria' },
   { title: '30 Common Bank Interview Questions', url: '/blog/bank-interview-questions-nigeria-ace-job' },
-  { title: 'Is an MBA Worth It in Nigeria? Complete Cost-Benefit Analysis', url: '/blog/is-an-mba-worth-it-nigeria' },
-  { title: 'Office Politics in Nigeria: Survival Guide for New Graduates', url: '/blog/office-politics-nigeria-new-grad-survival-guide' },
-  { title: 'Software Developer Salary in Nigeria', url: '/blog/software-developer-salary-nigeria-2026-your-ultimate-guide' },
-  { title: 'How to Apply for KPMG Internship: Step-by-Step Guide', url: '/blog/kpmg-internship-2026-your-ultimate-application-guide' },
   { title: 'How to Transition from Banking to Tech (Guide)', url: '/blog/how-to-transition-from-banking-to-tech-in-nigeria-2026-guide' },
   { title: 'How to Transition from Teaching to Corporate HR', url: '/blog/nigerian-teachers-to-hr-your-career-transition-guide' },
-  { title: 'How to Handle a Difficult Boss in Nigerian Corporate Culture', url: '/blog/navigate-difficult-bosses-nigeria-expert-guide' },
   { title: 'Virtual Interview Online Preparation Tips', url: '/blog/virtual-interview-tips' },
-  { title: 'Medical & Public Health Salaries in Nigeria', url: '/blog/healthcare-salaries-nigeria-2026-your-guide' },
-  { title: 'Civil, Mechanical & Petroleum Engineering Salaries in Nigeria', url: '/blog/nigeria-engineering-salaries-2026-civil-mech-petro' },
-  { title: 'Top 8 NGOs That Pay Corpers in Abuja (NYSC PPA Guide)', url: '/blog/ngos-that-pay-corpers-in-abuja-2026' },
-  { title: 'Best Paying Companies in Nigeria 2026', url: '/blog/best-paying-companies-in-nigeria-2026-high-salary-jobs-guide' },
-  { title: 'Top 25 Highest Paying Jobs in Nigeria: Best Careers & Salaries', url: '/blog/highest-paying-jobs-in-nigeria' },
   { title: 'How to Identify Fake Job Offers & Scam Interviews', url: '/blog/spot-fake-jobs--scam-interviews-nigeria' },
-  // ─── Add new blog URLs below ────────────────────────────────────────────────
+  // ─── Add new Global-relevant blog URLs below ───────────────────────────────────
 ];
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 function getRandomItems<T>(arr: T[], n: number): T[] {
   return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
+}
+
+/**
+ * Derives a URL-safe country slug from a job record.
+ * Falls back to 'global' if no country can be determined.
+ */
+function getJobCountrySlug(job: any): string {
+  const countryArr: string[] = Array.isArray(job.country) ? job.country : [];
+  const first = countryArr.find((c) => c.toLowerCase() !== 'global');
+  if (first) {
+    return first.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+  if (job.location && typeof job.location === 'object') {
+    const c = job.location.country || job.location.countries?.[0];
+    if (c && c.toLowerCase() !== 'global') {
+      return c.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+  }
+  return 'global';
+}
+
+/**
+ * Builds a job detail URL with the [country]/[slug] structure.
+ */
+function buildJobUrl(job: any): string {
+  const countrySlug = getJobCountrySlug(job);
+  return `/jobs/${countrySlug}/${job.slug || job.id}`;
+}
+
+/**
+ * Builds a search tag URL:
+ * - Gulf jobs → internal /jobs?search=... link (same domain, no new tab)
+ * - Other jobs → /jobs page (fallback)
+ */
+function buildSearchUrl(keyword: string): string {
+  return `/jobs?sort=match&search=${encodeURIComponent(keyword)}`;
 }
 
 export default function JobClient({ job, relatedJobs, companies }: { 
@@ -120,12 +141,13 @@ export default function JobClient({ job, relatedJobs, companies }: {
   const [showUrl, setShowUrl] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Always show 5 random blogs from the full pool — no condition hiding them
+  const [anchorHeight, setAnchorHeight] = useState(100);
+  const [isAnchorClosed, setIsAnchorClosed] = useState(false);
+
   const [randomBlogs, setRandomBlogs] = useState<typeof ALL_BLOGS>([]);
 
   useEffect(() => {
     setIsMounted(true);
-    // Always pick 5 random blogs — no region filtering needed for Nigeria
     setRandomBlogs(getRandomItems(ALL_BLOGS, 5));
   }, []);
 
@@ -136,9 +158,15 @@ export default function JobClient({ job, relatedJobs, companies }: {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const handleCloseAnchorAd = () => {
+    setAnchorHeight(50);
+    setIsAnchorClosed(true);
+  };
+
   const handleShare = async () => {
-    const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/jobs/${job.slug || job.id}`;
-    
+    // Build canonical share URL using [country]/[slug] structure
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const shareUrl = `${origin}${buildJobUrl(job)}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -162,7 +190,6 @@ export default function JobClient({ job, relatedJobs, companies }: {
     checkAuth();
     loadSavedStatus();
     loadAppliedStatus();
-
     if (!relatedJobs || relatedJobs.length === 0) {
       loadSimilarJobs();
     }
@@ -185,19 +212,14 @@ export default function JobClient({ job, relatedJobs, companies }: {
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      setUser(session.user);
-    }
+    if (session) setUser(session.user);
   };
 
   const loadSavedStatus = () => {
     if (typeof window === 'undefined') return;
     const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
     if (saved) {
-      try {
-        const savedArray = JSON.parse(saved);
-        setSaved(savedArray.includes(jobId));
-      } catch (e) {}
+      try { setSaved(JSON.parse(saved).includes(jobId)); } catch (e) {}
     }
   };
 
@@ -205,10 +227,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
     if (typeof window === 'undefined') return;
     const applied = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
     if (applied) {
-      try {
-        const appliedArray = JSON.parse(applied);
-        setApplied(appliedArray.includes(jobId));
-      } catch (e) {}
+      try { setApplied(JSON.parse(applied).includes(jobId)); } catch (e) {}
     }
   };
 
@@ -218,10 +237,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
       if (job.role_category) params.set('role_category', job.role_category);
       if (job.category) params.set('category', job.category);
       if (job.sector) params.set('sector', job.sector);
-
-      const res = await fetch(
-        `${SIMILAR_JOBS_WORKER_URL}?${params.toString()}`
-      );
+      const res = await fetch(`${SIMILAR_JOBS_WORKER_URL}?${params.toString()}`);
       if (!res.ok) throw new Error('Related jobs fetch failed');
       const data = await res.json();
       setSimilarJobs(data.jobs || []);
@@ -234,9 +250,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
     if (typeof window === 'undefined') return;
     const saved = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
     let savedArray: string[] = [];
-    if (saved) {
-      try { savedArray = JSON.parse(saved); } catch (e) {}
-    }
+    if (saved) { try { savedArray = JSON.parse(saved); } catch (e) {} }
     const newSaved = savedArray.includes(jobId)
       ? savedArray.filter(id => id !== jobId)
       : [...savedArray, jobId];
@@ -471,7 +485,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
                     .filter((w: string) => !STOP_WORDS.has(w.toLowerCase()))
                     .slice(0, 2);
                   const roleSearchUrl = searchWords.length
-                    ? `/jobs?sort=match&search=${encodeURIComponent(searchWords.join(' '))}`
+                    ? buildSearchUrl(searchWords.join(' '))
                     : null;
 
                   const locObj = typeof job.location === 'object' ? job.location : null;
@@ -480,9 +494,8 @@ export default function JobClient({ job, relatedJobs, companies }: {
                     ? (locObj?.state || locObj?.city || locObj?.country || null)
                     : null;
                   const locWord = locRaw ? locRaw.trim().split(/\s+/)[0] : null;
-                  const locSearchUrl = locWord
-                    ? `/jobs?sort=match&search=${encodeURIComponent(locWord)}`
-                    : null;
+                  // Gulf jobs: internal link; non-Gulf: internal /jobs fallback
+                  const locSearchUrl = locWord ? buildSearchUrl(locWord) : null;
 
                   return (
                     <div className="flex flex-wrap gap-2 mb-6">
@@ -533,7 +546,11 @@ export default function JobClient({ job, relatedJobs, companies }: {
                     <p className="text-lg font-bold text-gray-900 mb-3">Find similar jobs instead:</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {similarJobs.slice(0, 10).map((similarJob) => (
-                        <a key={similarJob.id} href={`/jobs/${similarJob.slug || similarJob.id}`} className="block p-3 bg-white hover:bg-blue-50 rounded-lg transition-colors">
+                        <a
+                          key={similarJob.id}
+                          href={buildJobUrl(similarJob)}
+                          className="block p-3 bg-white hover:bg-blue-50 rounded-lg transition-colors"
+                        >
                           <p className="text-base font-medium text-blue-600 line-clamp-1">{similarJob.title}</p>
                           <p className="text-xs text-gray-900 mt-0.5">
                             {typeof similarJob.company === 'string' ? similarJob.company : similarJob.company?.name || 'Company'}
@@ -593,6 +610,10 @@ export default function JobClient({ job, relatedJobs, companies }: {
                   </div>
                 </div>
 
+                <div className="mt-4 -mx-6 px-6" style={{ minHeight: '250px' }}>
+                  <AdUnit slot={AD_SLOTS.DISPLAY_TOP} format="auto" style={{ display: 'block', width: '100%', minHeight: '250px' }} />
+                </div>
+
                 {(job.sector || job.experience_level || job.deadline) && (
                   <div className="mt-6 pt-6 border-t border-gray-100">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -630,32 +651,17 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 )}
               </div>
 
-              {/* Ad 1 — between Job Overview and About the Company */}
-              <div className="w-full overflow-hidden">
-                <AdUnit
-                  slot={AD_SLOTS.DISPLAY_TOP}
-                  format="auto"
-                  style={{ display: 'block', width: '100%' }}
-                />
-              </div>
-
               {job.about_company && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">About the Company</h2>
-                  <div
-                    className="text-base leading-loose text-gray-700 prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: typeof job.about_company === 'string' ? job.about_company : '' }}
-                  />
+                  <div className="text-base leading-loose text-gray-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: typeof job.about_company === 'string' ? job.about_company : '' }} />
                 </div>
               )}
 
               {job.description && (
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">Job Description</h2>
-                  <div
-                    className="text-base leading-loose text-gray-700 prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: typeof job.description === 'string' ? job.description : '' }}
-                  />
+                  <div className="text-base leading-loose text-gray-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: typeof job.description === 'string' ? job.description : '' }} />
                 </div>
               )}
 
@@ -665,36 +671,27 @@ export default function JobClient({ job, relatedJobs, companies }: {
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">Required Skills</h2>
                   <div className="flex flex-wrap gap-2">
                     {(job.skills_required || job.skills || []).map((skill: string, index: number) => (
-                      <span key={index} className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-900 border border-gray-200">
-                        {skill}
-                      </span>
+                      <span key={index} className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-900 border border-gray-200">{skill}</span>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* In-Article Ad 1 */}
               <div className="w-full overflow-hidden">
-                <AdUnit
-                  slot={AD_SLOTS.IN_ARTICLE}
-                  format="fluid"
-                  layout="in-article"
-                  style={{ display: 'block', textAlign: 'center', width: '100%' }}
-                />
+                <AdUnit slot={AD_SLOTS.IN_ARTICLE} format="fluid" layout="in-article" style={{ display: 'block', textAlign: 'center', width: '100%' }} />
               </div>
 
               {(() => {
-                const responsibilities = job.responsibilities || [];
-                const responsibilitiesArray = Array.isArray(responsibilities) ? responsibilities : [];
+                const responsibilitiesArray = Array.isArray(job.responsibilities) ? job.responsibilities : [];
                 if (responsibilitiesArray.length > 0) {
                   return (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h2 className="text-xl font-semibold mb-4 text-gray-900">Key Responsibilities</h2>
                       <ul className="space-y-5">
-                        {responsibilitiesArray.map((responsibility: string, index: number) => (
-                          <li key={index} className="flex items-start gap-3 text-base text-gray-700">
+                        {responsibilitiesArray.map((r: string, i: number) => (
+                          <li key={i} className="flex items-start gap-3 text-base text-gray-700">
                             <span className="flex-shrink-0 w-2 h-2 rounded-full mt-2" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></span>
-                            <span>{responsibility}</span>
+                            <span>{r}</span>
                           </li>
                         ))}
                       </ul>
@@ -705,17 +702,16 @@ export default function JobClient({ job, relatedJobs, companies }: {
               })()}
 
               {(() => {
-                const qualifications = job.qualifications || [];
-                const qualificationsArray = Array.isArray(qualifications) ? qualifications : [];
+                const qualificationsArray = Array.isArray(job.qualifications) ? job.qualifications : [];
                 if (qualificationsArray.length > 0) {
                   return (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h2 className="text-xl font-semibold mb-4 text-gray-900">Qualifications</h2>
                       <ul className="space-y-5">
-                        {qualificationsArray.map((qualification: string, index: number) => (
-                          <li key={index} className="flex items-start gap-3 text-base text-gray-700">
+                        {qualificationsArray.map((q: string, i: number) => (
+                          <li key={i} className="flex items-start gap-3 text-base text-gray-700">
                             <span className="flex-shrink-0 w-2 h-2 rounded-full mt-2" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></span>
-                            <span>{qualification}</span>
+                            <span>{q}</span>
                           </li>
                         ))}
                       </ul>
@@ -725,18 +721,21 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 return null;
               })()}
 
+              <div className="w-full overflow-hidden">
+                <AdUnit slot={AD_SLOTS.IN_ARTICLE} format="fluid" layout="in-article" style={{ display: 'block', textAlign: 'center', width: '100%' }} />
+              </div>
+
               {(() => {
-                const benefits = job.benefits || [];
-                const benefitsArray = Array.isArray(benefits) ? benefits : [];
+                const benefitsArray = Array.isArray(job.benefits) ? job.benefits : [];
                 if (benefitsArray.length > 0) {
                   return (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h2 className="text-xl font-semibold mb-4 text-gray-900">Benefits &amp; Perks</h2>
                       <ul className="space-y-5">
-                        {benefitsArray.map((benefit: string, index: number) => (
-                          <li key={index} className="flex items-start gap-3 text-base text-gray-700">
+                        {benefitsArray.map((b: string, i: number) => (
+                          <li key={i} className="flex items-start gap-3 text-base text-gray-700">
                             <Award size={20} className="flex-shrink-0 mt-0.5" style={{ color: theme.colors.primary.DEFAULT }} />
-                            <span>{benefit}</span>
+                            <span>{b}</span>
                           </li>
                         ))}
                       </ul>
@@ -746,17 +745,13 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 return null;
               })()}
 
+              <div className="w-full overflow-hidden" style={{ minHeight: '100px' }}>
+                <AdUnit slot={AD_SLOTS.DISPLAY_BOTTOM} format="auto" style={{ display: 'block', width: '100%' }} />
+              </div>
+
               {/* How to Apply */}
               {isExpired ? (
                 <div id="how-to-apply" className="bg-white rounded-xl shadow-sm p-6">
-                  {/* Ad 3 — inside How to Apply, above header */}
-                  <div className="w-full overflow-hidden mb-4">
-                    <AdUnit
-                      slot={AD_SLOTS.DISPLAY_BOTTOM}
-                      format="auto"
-                      style={{ display: 'block', width: '100%' }}
-                    />
-                  </div>
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">How to Apply</h2>
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-red-600 font-medium">This job has expired</p>
@@ -764,21 +759,12 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               ) : (job.application?.email || job.application_email || job.application?.phone || job.application_phone || job.application?.link || job.application?.url || job.application_url) && (
                 <div id="how-to-apply" className="bg-white rounded-xl shadow-sm p-6">
-                  {/* Ad 3 — inside How to Apply, above header */}
-                  <div className="w-full overflow-hidden mb-4">
-                    <AdUnit
-                      slot={AD_SLOTS.DISPLAY_BOTTOM}
-                      format="auto"
-                      style={{ display: 'block', width: '100%' }}
-                    />
-                  </div>
                   <h2 className="text-xl font-semibold mb-4 text-gray-900">How to Apply</h2>
                   {job.apply_instruction && (
                     <p className="text-base text-gray-600 mb-6 whitespace-pre-wrap" style={{ marginTop: '8px' }}>
                       {job.apply_instruction}
                     </p>
                   )}
-                  
                   <div className="space-y-3">
                     {(job.application?.phone || job.application_phone) && (
                       <div>
@@ -897,33 +883,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               )}
 
-              {/* ─── Apply for Me — always shown for non-expired jobs ─────────────── */}
-              {!isExpired && (
-                <div
-                  className="rounded-xl overflow-hidden shadow-sm flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-5"
-                  style={{ backgroundColor: '#fff7ed', border: '1.5px solid #fed7aa' }}
-                >
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-1" style={{ color: '#ea580c' }}>
-                      Too Busy to Apply?
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      With JobMeter&apos;s <span className="font-semibold text-gray-800">Apply for Me</span> service, we apply to up to{' '}
-                      <span className="font-bold" style={{ color: '#ea580c' }}>15 jobs/month</span> on your behalf — sourced, matched, with a tailored CV for each application.
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <a
-                      href="/apply-for-me"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors hover:opacity-90 whitespace-nowrap shadow-sm"
-                      style={{ backgroundColor: '#ea580c' }}
-                    >
-                      Learn More
-                      <ChevronRight size={15} />
-                    </a>
-                  </div>
-                </div>
-              )}
+              {/* No "Apply for Me" on remote.jobmeter.app */}
 
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900">Join Our Communities</h2>
@@ -958,25 +918,17 @@ export default function JobClient({ job, relatedJobs, companies }: {
                   <Accordion type="multiple" defaultValue={["about-role"]} className="w-full" style={{ marginTop: '8px' }}>
                     {job.about_role && job.about_role.trim() && (
                       <AccordionItem value="about-role" className="border-b border-gray-200">
-                        <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">
-                          About This Role
-                        </AccordionTrigger>
+                        <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">About This Role</AccordionTrigger>
                         <AccordionContent>
-                          <p className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap" style={{ marginTop: '8px' }}>
-                            {job.about_role}
-                          </p>
+                          <p className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap" style={{ marginTop: '8px' }}>{job.about_role}</p>
                         </AccordionContent>
                       </AccordionItem>
                     )}
                     {job.who_apply && job.who_apply.trim() && (
                       <AccordionItem value="who-apply" className="border-b border-gray-200">
-                        <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">
-                          Who Should Apply
-                        </AccordionTrigger>
+                        <AccordionTrigger className="text-base font-semibold text-gray-900 hover:no-underline py-4">Who Should Apply</AccordionTrigger>
                         <AccordionContent>
-                          <p className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap" style={{ marginTop: '8px' }}>
-                            {job.who_apply}
-                          </p>
+                          <p className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap" style={{ marginTop: '8px' }}>{job.who_apply}</p>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -989,9 +941,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
-                            {job.standout}
-                          </p>
+                          <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">{job.standout}</p>
                         </AccordionContent>
                       </AccordionItem>
                     )}
@@ -1007,9 +957,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
                       const dateStr = job.posted_date || job.created_at;
                       const date = new Date(dateStr);
                       if (isNaN(date.getTime())) return 'Date not available';
-                      return date.toLocaleDateString('en-US', {
-                        year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
-                      });
+                      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
                     })()}
                   </p>
                   {(job.views || 0) > 0 && (
@@ -1032,32 +980,19 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               )}
 
-              {/* Ad 4 — under Posted Date, mobile only */}
-              <div className="lg:hidden w-full rounded-lg overflow-hidden">
-                <AdUnit
-                  slot={AD_SLOTS.BANNER_1}
-                  format="auto"
-                  style={{ display: 'block', width: '100%' }}
-                />
+              <div className="w-full rounded-lg overflow-hidden">
+                <AdUnit slot={AD_SLOTS.BANNER_1} format="auto" style={{ display: 'block', width: '100%' }} />
               </div>
-
             </div>
 
             {/* RIGHT COLUMN — Sidebar */}
             <div className="lg:col-span-1 space-y-6">
-
-              {/* ─── Desktop-only banner ad — top of sidebar ─────────────────────── */}
               <div className="hidden lg:block w-full rounded-lg overflow-hidden">
-                <AdUnit
-                  slot={AD_SLOTS.BANNER_3}
-                  format="auto"
-                  style={{ display: 'block', width: '100%' }}
-                />
+                <AdUnit slot={AD_SLOTS.BANNER_3} format="auto" style={{ display: 'block', width: '100%' }} />
               </div>
 
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="px-5 py-4 font-semibold text-base flex items-center gap-2" 
-                     style={{ backgroundColor: `${theme.colors.primary.DEFAULT}10`, color: theme.colors.primary.DEFAULT }}>
+                <div className="px-5 py-4 font-semibold text-base flex items-center gap-2" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}10`, color: theme.colors.primary.DEFAULT }}>
                   <PenTool size={16} />
                   Free Recruitment Practice Test
                 </div>
@@ -1065,10 +1000,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
                   <ul className="space-y-3">
                     {FEATURED_QUIZZES.map((quiz, index) => (
                       <li key={index}>
-                        <a
-                          href={quiz.url}
-                          className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group"
-                        >
+                        <a href={quiz.url} className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group">
                           <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
                           <span className="group-hover:underline">{quiz.name}</span>
                         </a>
@@ -1076,16 +1008,16 @@ export default function JobClient({ job, relatedJobs, companies }: {
                     ))}
                   </ul>
                   <div className="mt-4 pt-3 border-t border-gray-100">
-                    <a
-                      href="/tools/quiz"
-                      className="flex items-center gap-1.5 text-sm font-semibold hover:underline"
-                      style={{ color: theme.colors.primary.DEFAULT }}
-                    >
+                    <a href="/tools/quiz" className="flex items-center gap-1.5 text-sm font-semibold hover:underline" style={{ color: theme.colors.primary.DEFAULT }}>
                       See all assessments
                       <ChevronRight size={14} />
                     </a>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex lg:hidden w-full overflow-hidden">
+                <AdUnit slot={AD_SLOTS.SIDEBAR_MOBILE} format="fluid" layoutKey="-fb+5w+4e-db+86" style={{ display: 'block', width: '100%' }} />
               </div>
 
               {similarJobs && similarJobs.length > 0 && (
@@ -1096,7 +1028,11 @@ export default function JobClient({ job, relatedJobs, companies }: {
                   <div className="px-5 py-4">
                     <div className="space-y-4">
                       {similarJobs.map((similarJob) => (
-                        <a key={similarJob.id} href={`/jobs/${similarJob.slug || similarJob.id}`} className="block group">
+                        <a
+                          key={similarJob.id}
+                          href={buildJobUrl(similarJob)}
+                          className="block group"
+                        >
                           <div className="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors">
                             <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full mt-2 group-hover:scale-150 transition-transform" style={{ backgroundColor: theme.colors.primary.DEFAULT }}></div>
                             <div className="flex-1 min-w-0">
@@ -1124,11 +1060,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
                       ))}
                     </div>
                     <div className="mt-5 pt-4 border-t border-gray-200">
-                      <a
-                        href="/jobs"
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-md"
-                        style={{ backgroundColor: theme.colors.primary.DEFAULT }}
-                      >
+                      <a href="/jobs" className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-md" style={{ backgroundColor: theme.colors.primary.DEFAULT }}>
                         <ExternalLink size={16} />
                         View all jobs
                       </a>
@@ -1138,50 +1070,33 @@ export default function JobClient({ job, relatedJobs, companies }: {
               )}
 
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div 
-                  className="px-5 py-4 font-semibold text-base flex items-center gap-2" 
-                  style={{ backgroundColor: `${theme.colors.primary.DEFAULT}10`, color: theme.colors.primary.DEFAULT }}
-                >
+                <div className="px-5 py-4 font-semibold text-base flex items-center gap-2" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}10`, color: theme.colors.primary.DEFAULT }}>
                   <Sparkles size={16} />
                   Free Career Tools
                 </div>
                 <div className="px-5 py-4">
                   <ul className="space-y-3">
                     <li>
-                      <a
-                        href="https://www.jobmeter.app/tools/interview"
-                        className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group"
-                      >
+                      <a href="/tools/interview" className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group">
                         <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
                         <span className="group-hover:underline">Free Interview Practice</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="https://www.jobmeter.app/tools/ats-review"
-                        className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group"
-                      >
+                      <a href="/tools/ats-review" className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group">
                         <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
                         <span className="group-hover:underline">ATS CV Review</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="https://www.jobmeter.app/tools/career"
-                        className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group"
-                      >
+                      <a href="/tools/career" className="flex items-center gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group">
                         <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
                         <span className="group-hover:underline">Career Coach</span>
                       </a>
                     </li>
                   </ul>
-
                   <div className="mt-4 pt-3 border-t border-gray-100">
-                    <a
-                      href="https://www.jobmeter.app/tools"
-                      className="flex items-center gap-1.5 text-sm font-semibold hover:underline"
-                      style={{ color: theme.colors.primary.DEFAULT }}
-                    >
+                    <a href="/tools" className="flex items-center gap-1.5 text-sm font-semibold hover:underline" style={{ color: theme.colors.primary.DEFAULT }}>
                       See all career tools
                       <ChevronRight size={14} />
                     </a>
@@ -1189,49 +1104,56 @@ export default function JobClient({ job, relatedJobs, companies }: {
                 </div>
               </div>
 
-              {/* ─── Blog Articles — always shown, 5 random picks ─────────────────── */}
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="px-5 py-4 font-semibold text-base flex items-center gap-2" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}10`, color: theme.colors.primary.DEFAULT }}>
-                  <BookOpen size={16} />
-                  Read Career Articles
-                </div>
-                <div className="px-5 py-4">
-                  <ul className="space-y-3">
-                    {randomBlogs.map((blog, index) => (
-                      <li key={index}>
-                        <a
-                          href={blog.url}
-                          className="flex items-start gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group"
-                        >
-                          <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 mt-0.5 transition-colors" />
-                          <span className="group-hover:underline leading-snug">{blog.title}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-4 pt-3 border-t border-gray-100">
-                    <a
-                      href="/blog"
-                      className="flex items-center gap-1.5 text-sm font-semibold hover:underline"
-                      style={{ color: theme.colors.primary.DEFAULT }}
-                    >
-                      See all articles
-                      <ChevronRight size={14} />
-                    </a>
+              {/* Blog Articles — 5 random picks */}
+              {randomBlogs.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 font-semibold text-base flex items-center gap-2" style={{ backgroundColor: `${theme.colors.primary.DEFAULT}10`, color: theme.colors.primary.DEFAULT }}>
+                    <BookOpen size={16} />
+                    Read Career Articles
+                  </div>
+                  <div className="px-5 py-4">
+                    <ul className="space-y-3">
+                      {randomBlogs.map((blog, index) => (
+                        <li key={index}>
+                          <a href={blog.url} className="flex items-start gap-2 text-sm font-medium text-gray-800 hover:text-blue-600 transition-colors group">
+                            <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500 flex-shrink-0 mt-0.5 transition-colors" />
+                            <span className="group-hover:underline leading-snug">{blog.title}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      <a href="/blog" className="flex items-center gap-1.5 text-sm font-semibold hover:underline" style={{ color: theme.colors.primary.DEFAULT }}>
+                        See all articles
+                        <ChevronRight size={14} />
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Ad 5 — bottom of sidebar, desktop only */}
-              <div className="hidden lg:block w-full rounded-lg overflow-hidden">
-                <AdUnit
-                  slot={AD_SLOTS.BANNER_2}
-                  format="auto"
-                  style={{ display: 'block', width: '100%' }}
-                />
+              <div className="w-full rounded-lg overflow-hidden">
+                <AdUnit slot={AD_SLOTS.BANNER_2} format="auto" style={{ display: 'block', width: '100%' }} />
               </div>
-
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Anchor Ad */}
+        <div
+          id="mobile-anchor-ad"
+          className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white border-t border-gray-100 overflow-hidden transition-all duration-300"
+          style={{ height: `${anchorHeight}px` }}
+        >
+          <button
+            onClick={handleCloseAnchorAd}
+            className="absolute top-1.5 left-3 z-50 w-7 h-7 flex items-center justify-center bg-white rounded-full shadow text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            aria-label="Close bottom advertisement"
+          >
+            <X size={18} />
+          </button>
+          <div className="w-full transition-all duration-300" style={{ height: `${anchorHeight}px` }}>
+            <AdUnit slot={AD_SLOTS.ANCHOR_MOBILE} format="auto" style={{ display: 'block', width: '100%', height: `${anchorHeight}px`, maxHeight: `${anchorHeight}px` }} />
           </div>
         </div>
 
@@ -1239,11 +1161,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
         {upgradeErrorType && (
           <UpgradeModal
             isOpen={upgradeModalOpen}
-            onClose={() => {
-              setUpgradeModalOpen(false);
-              setUpgradeErrorType(null);
-              setUpgradeErrorData(null);
-            }}
+            onClose={() => { setUpgradeModalOpen(false); setUpgradeErrorType(null); setUpgradeErrorData(null); }}
             errorType={upgradeErrorType}
             message={upgradeErrorData?.message}
             resetDate={upgradeErrorData?.resetDate}
@@ -1253,8 +1171,7 @@ export default function JobClient({ job, relatedJobs, companies }: {
           />
         )}
 
-        {/* TimedJobPopup — always shown for all jobs on jobmeter.app */}
-        <TimedJobPopup forceShow={true} />
+        {/* No TimedJobPopup on remote.jobmeter.app */}
 
       </div>
     </>

@@ -22,14 +22,6 @@ import AdUnit from '@/components/ads/AdUnit';
 export default function ResourcePage() {
   const resources = [
     {
-      id: 'categories',
-      title: 'Categories',
-      description: 'Browse jobs by category and specialization',
-      icon: Briefcase,
-      color: '#2563EB',
-      route: '/resources',
-    },
-    {
       id: 'locations',
       title: 'Locations',
       description: 'Find jobs in different cities and states',

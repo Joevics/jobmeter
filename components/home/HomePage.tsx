@@ -17,7 +17,8 @@ import {
   Sparkles,
   Shield,
   Calendar,
-  PlusCircle
+  PlusCircle,
+  Globe
 } from 'lucide-react';
 
 import Link from 'next/link';
@@ -57,50 +58,62 @@ interface MatchCircleProps {
   score: number;
 }
 
-const RESOURCES = [
-  { title: 'Accountant Jobs', slug: 'accountant-jobs' },
-  { title: 'Sales Executive Jobs', slug: 'sales-executive-jobs' },
-  { title: 'Social Media Manager Jobs', slug: 'social-media-manager-jobs' },
-  { title: 'Inventory Controller Jobs', slug: 'inventory-controller-jobs' },
-  { title: 'Executive Assistant Jobs', slug: 'executive-assistant-jobs' },
-  { title: 'Housekeeper Jobs', slug: 'housekeeper-jobs' },
-  { title: 'Farm Manager Jobs', slug: 'farm-manager-jobs' },
-  { title: 'Marketing Officer Jobs', slug: 'marketing-officer-jobs' },
-  { title: 'Nanny Jobs', slug: 'nanny-jobs' },
-  { title: 'HR Manager Jobs', slug: 'hr-manager-jobs' },
-  { title: 'Chef Jobs', slug: 'chef-jobs' },
-  { title: 'Cook Jobs', slug: 'cook-jobs' },
-  { title: 'Sales Manager Jobs', slug: 'sales-manager-jobs' },
-  { title: 'Content Creator Jobs', slug: 'content-creator-jobs' },
-  { title: 'Customer Service Representative Jobs', slug: 'customer-service-representative-jobs' },
-  { title: 'Machine Operator Jobs', slug: 'machine-operator-jobs' },
-  { title: 'Production Technician Jobs', slug: 'production-technician-jobs' },
-  { title: 'Beautician Jobs', slug: 'beautician-jobs' },
-  { title: 'Graphic Designer Jobs', slug: 'graphic-designer-jobs' },
-  { title: 'AI Engineer Jobs', slug: 'ai-engineer-jobs' },
+const FEATURED_POSTS = [
+  {
+    slug: 'why-you-are-not-getting-job-offers',
+    title: "Why You're Not Getting Job Offers: 10 Common Reasons & Fixes",
+    excerpt: 'Discover the real reasons behind application silence and actionable fixes to turn things around.',
+  },
+  {
+    slug: 'master-salary-negotiation-guide',
+    title: 'Master the Art of Salary Negotiation: Get the Pay You Deserve',
+    excerpt: 'A step-by-step guide to negotiating your salary confidently — wherever you are in the world.',
+  },
+  {
+    slug: 'highest-paying-jobs-in-uae',
+    title: 'Highest Paying Jobs in UAE 2026: Top Salaries, Skills & Careers',
+    excerpt: 'Explore the best-paying roles in the UAE and what it takes to land them.',
+  },
+  {
+    slug: '10-minute-resume-fix-increase-interviews',
+    title: 'The 10-Minute Resume Fix to Land More Interviews in 2026',
+    excerpt: 'Quick, high-impact changes you can make to your CV right now to increase callbacks.',
+  },
+  {
+    slug: 'how-to-answer-expected-salary-interview',
+    title: 'How to Answer "Expected Salary" in Interviews (Global Guide)',
+    excerpt: 'Navigate the trickiest interview question with confidence — tips that work across industries.',
+  },
+  {
+    slug: 'spot-fake-jobs--scam-interviews-nigeria',
+    title: 'How to Spot Fake Job Offers & Scam Interviews',
+    excerpt: 'Red flags to watch for and how to protect yourself from fraudulent recruiters worldwide.',
+  },
 ] as const;
 
-const LOCATIONS = [
-  { title: 'Jobs in Lagos', slug: 'lagos' },
-  { title: 'Jobs in Abuja', slug: 'abuja' },
-  { title: 'Jobs in PortHarcourt', slug: 'port-harcourt' },
-  { title: 'Jobs in Ibadan', slug: 'ibadan' },
-  { title: 'Jobs in Kano', slug: 'kano' },
-  { title: 'Jobs in Kaduna', slug: 'kaduna' },
-  { title: 'Jobs in Ondo', slug: 'ondo' },
-  { title: 'Jobs in Ogun', slug: 'ogun' },
-  { title: 'Jobs in Rivers', slug: 'rivers' },
-  { title: 'Jobs in Oyo', slug: 'oyo' },
-  { title: 'Jobs in Ekiti', slug: 'ekiti' },
-  { title: 'Jobs in Enugu', slug: 'enugu' },
-  { title: 'Jobs in Imo', slug: 'imo' },
-  { title: 'Jobs in Delta', slug: 'delta' },
-  { title: 'Jobs in Edo', slug: 'edo' },
-  { title: 'Jobs in Kwara', slug: 'kwara' },
-  { title: 'Jobs in Benue', slug: 'benue' },
-  { title: 'Jobs in Niger', slug: 'niger' },
-  { title: 'Jobs in Plateau', slug: 'plateau' },
-  { title: 'Jobs in Sokoto', slug: 'sokoto' },
+const COUNTRIES = [
+  { title: 'Jobs in Nigeria', slug: 'nigeria', flag: '🇳🇬' },
+  { title: 'Jobs in USA', slug: 'usa', flag: '🇺🇸' },
+  { title: 'Jobs in UK', slug: 'uk', flag: '🇬🇧' },
+  { title: 'Jobs in Canada', slug: 'canada', flag: '🇨🇦' },
+  { title: 'Jobs in Australia', slug: 'australia', flag: '🇦🇺' },
+  { title: 'Jobs in UAE', slug: 'united-arab-emirates', flag: '🇦🇪' },
+  { title: 'Jobs in Saudi Arabia', slug: 'saudi-arabia', flag: '🇸🇦' },
+  { title: 'Jobs in Germany', slug: 'germany', flag: '🇩🇪' },
+  { title: 'Jobs in France', slug: 'france', flag: '🇫🇷' },
+  { title: 'Jobs in Netherlands', slug: 'netherlands', flag: '🇳🇱' },
+  { title: 'Jobs in South Africa', slug: 'south-africa', flag: '🇿🇦' },
+  { title: 'Jobs in Ireland', slug: 'ireland', flag: '🇮🇪' },
+  { title: 'Jobs in New Zealand', slug: 'new-zealand', flag: '🇳🇿' },
+  { title: 'Jobs in Qatar', slug: 'qatar', flag: '🇶🇦' },
+  { title: 'Jobs in Kuwait', slug: 'kuwait', flag: '🇰🇼' },
+  { title: 'Jobs in Singapore', slug: 'singapore', flag: '🇸🇬' },
+  { title: 'Jobs in Sweden', slug: 'sweden', flag: '🇸🇪' },
+  { title: 'Jobs in Norway', slug: 'norway', flag: '🇳🇴' },
+  { title: 'Jobs in Switzerland', slug: 'switzerland', flag: '🇨🇭' },
+  { title: 'Jobs in Belgium', slug: 'belgium', flag: '🇧🇪' },
+  { title: 'Jobs in Italy', slug: 'italy', flag: '🇮🇹' },
+  { title: 'Jobs in Spain', slug: 'spain', flag: '🇪🇸' },
 ] as const;
 
 const FAQS = [
@@ -114,7 +127,7 @@ const FAQS = [
   },
   {
     question: "How do I find jobs by location on JobMeter?",
-    answer: "You can browse jobs by location using our location filter or visit our 'Jobs by Location' section which lists opportunities in major cities and states across Nigeria and globally."
+    answer: "You can browse jobs by country using our Jobs by Country section, which lists opportunities in Nigeria, USA, UK, Canada, Australia, UAE, and many more countries worldwide. You can also use our location filter on the jobs page."
   },
   {
     question: "Can recruiters post jobs on JobMeter?",
@@ -610,31 +623,7 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           </div>
         </section>
 
-        {/* Browse Jobs by Category */}
-        <section className="px-6 py-8 bg-white">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Browse Jobs by Category</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {RESOURCES.map((cat) => (
-                <Link
-                  key={cat.slug}
-                  href={`/resources/${cat.slug}`}
-                  className="text-blue-600 hover:underline text-sm"
-                >
-                  {cat.title}
-                </Link>
-              ))}
-              <Link
-                href="/resources"
-                className="text-blue-600 hover:underline font-semibold mt-2 text-sm"
-              >
-                View All Categories →
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* ── AD 2: In-article mid-page — natural break before locations ── */}
+        {/* ── AD 2: In-article mid-page — natural break before countries ── */}
         <section className="px-6 py-4 bg-white">
           <div className="max-w-4xl mx-auto">
             <AdUnit
@@ -645,25 +634,26 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           </div>
         </section>
 
-        {/* Browse Jobs by Location */}
+        {/* Browse Jobs by Country */}
         <section className="px-6 py-8 bg-white">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Jobs by Location</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Jobs by Country</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {LOCATIONS.map((loc) => (
+              {COUNTRIES.map((country) => (
                 <Link
-                  key={loc.slug}
-                  href={`/jobs/state/${loc.slug}`}
-                  className="text-blue-600 hover:underline text-sm"
+                  key={country.slug}
+                  href={`/jobs/${country.slug}`}
+                  className="text-blue-600 hover:underline text-sm flex items-center gap-2"
                 >
-                  {loc.title}
+                  <span>{country.flag}</span>
+                  {country.title}
                 </Link>
               ))}
               <Link
-                href="/jobs/state"
+                href="/jobs"
                 className="text-blue-600 hover:underline font-semibold mt-2 text-sm"
               >
-                View All Locations →
+                View All Countries →
               </Link>
             </div>
           </div>
@@ -719,40 +709,37 @@ export default function HomePage({ jobs: initialJobs, blogPosts, companies = [] 
           </div>
         </section>
 
-        {/* Recent Blog Posts */}
-        {blogPosts.length > 0 && (
-          <section className="px-6 py-8" style={{ backgroundColor: theme.colors.background.muted }}>
-            <div className="max-w-4xl mx-auto">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">Career Insights & Tips</h2>
-                </div>
-                <Link
-                  href="/blog"
-                  className="text-sm font-semibold flex items-center gap-1"
-                  style={{ color: theme.colors.primary.DEFAULT }}
-                >
-                  View All
-                  <ArrowRight size={16} />
-                </Link>
+        {/* Career Insights Blog Posts */}
+        <section className="px-6 py-8" style={{ backgroundColor: theme.colors.background.muted }}>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">Career Insights & Tips</h2>
+                <p className="text-sm text-gray-600">Guides, salary data, and career advice from around the world</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {blogPosts.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/blog/${post.slug}`}
-                    className="bg-white rounded-xl p-4 border border-gray-200 hover:border-blue-300 transition-colors"
-                  >
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
-                    {post.excerpt && (
-                      <p className="text-sm text-gray-600 line-clamp-2">{post.excerpt}</p>
-                    )}
-                  </Link>
-                ))}
-              </div>
+              <Link
+                href="/blog"
+                className="text-sm font-semibold flex items-center gap-1"
+                style={{ color: theme.colors.primary.DEFAULT }}
+              >
+                View All
+                <ArrowRight size={16} />
+              </Link>
             </div>
-          </section>
-        )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {FEATURED_POSTS.map((post) => (
+                <Link
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  className="bg-white rounded-xl p-4 border border-gray-200 hover:border-blue-300 transition-colors"
+                >
+                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{post.title}</h3>
+                  <p className="text-sm text-gray-600 line-clamp-2">{post.excerpt}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
 
 {/* SEO Footer Content */}
 <section className="px-6 py-12 bg-gray-50">

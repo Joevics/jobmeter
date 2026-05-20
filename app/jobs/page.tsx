@@ -4,11 +4,6 @@ import { Metadata } from 'next';
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jobmeter.app';
 
-// Cache this page at the edge for 1 hour.
-// The page is a static shell — JobList fetches jobs client-side from Cloudflare.
-// This prevents every visit from hitting Vercel origin and burning Fast Origin Transfer.
-export const revalidate = 3600;
-
 export const metadata: Metadata = {
   title: 'Find Jobs Near You — Search & Apply for Open Positions | JobMeter',
   description:
