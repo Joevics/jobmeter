@@ -10,6 +10,7 @@ const footerLinks = [
   { href: '/blog', label: 'Blog' },
   { href: '/company', label: 'Companies' },
   { href: '/submit', label: 'Post a job' },
+  { href: 'https://gulftools.jobmeter.app/', label: 'Gulf Tools' },
 ];
 
 export default function Footer() {
