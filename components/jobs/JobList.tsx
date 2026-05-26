@@ -864,19 +864,20 @@ export default function JobList({ siteType = 'global', initialJobs, initialCount
         if (!locationMatch) return false;
       }
 
-      if (filters.country) {
-        // Strict match against the country[] column only — no global fallback
-        const jobCountries: string[] = (job as any).country || [];
-        if (!jobCountries.some(c => c.toLowerCase() === filters.country.toLowerCase())) return false;
-      }
+if (filters.country && filters.country !== 'Global') {
+  const jobCountries: string[] = (job as any).country || [];
+  if (!jobCountries.some(c => c.toLowerCase() === filters.country.toLowerCase())) return false;
+}
 
-      if (filters.remote) {
-        const jobLoc = job.location;
-        let isRemote = false;
-        if (typeof jobLoc === 'string') { isRemote = jobLoc.toLowerCase().includes('remote'); }
-        else if (jobLoc && typeof jobLoc === 'object') { isRemote = Boolean((jobLoc as Record<string, unknown>).remote); }
-        if (!isRemote) return false;
-      }
+if (filters.remote) {
+  const jobType = (job as any).job_type?.toLowerCase() || '';
+  const jobLoc = job.location;
+  const isRemoteByType = jobType === 'remote' || jobType === 'hybrid';
+  let isRemoteByLocation = false;
+  if (typeof jobLoc === 'string') { isRemoteByLocation = jobLoc.toLowerCase().includes('remote'); }
+  else if (jobLoc && typeof jobLoc === 'object') { isRemoteByLocation = Boolean((jobLoc as Record<string, unknown>).remote); }
+  if (!isRemoteByType && !isRemoteByLocation) return false;
+}
 
       if (filters.employmentType && filters.employmentType.length > 0) {
         const jobLoc = job.location;
@@ -1184,8 +1185,8 @@ export default function JobList({ siteType = 'global', initialJobs, initialCount
                   className="w-full px-2 py-2.5 rounded-lg border cursor-pointer font-medium text-sm"
                   style={{ backgroundColor: filters.country ? theme.colors.primary.DEFAULT + '10' : theme.colors.background.DEFAULT, borderColor: filters.country ? theme.colors.primary.DEFAULT : theme.colors.border.DEFAULT, color: theme.colors.text.primary, height: '42px' }}
                 >
-                  <option value="__remote__">🌐 Remote (All Countries)</option>
-                  <option value="Global">🌍 Global (All Countries)</option>
+                  <option value="Global">🌍 Global</option>
+                  <option value="__remote__">🌐 Remote Jobs</option>
                   <option value="Nigeria">🇳🇬 Nigeria</option>
                   <option value="United States">🇺🇸 United States</option>
                   <option value="United Kingdom">🇬🇧 United Kingdom</option>

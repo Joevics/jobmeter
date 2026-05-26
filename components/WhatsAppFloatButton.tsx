@@ -5,16 +5,16 @@ import React, { useState, useEffect, useRef } from 'react';
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 const whatsappChannels = [
-  { label: 'Nigeria', href: 'https://whatsapp.com/channel/0029VbC3NrUKLaHp8JAt7v3y' },
-  { label: 'Gulf Jobs', href: 'https://whatsapp.com/channel/0029VbCym2i7DAWx9oGcIV11' },
   { label: 'Global Jobs', href: 'https://whatsapp.com/channel/0029VbCmGF10Qeanq3dje41Z' },
+  { label: 'Gulf Jobs', href: 'https://whatsapp.com/channel/0029VbCym2i7DAWx9oGcIV11' },
+  { label: 'Nigerian Jobs', href: 'https://whatsapp.com/channel/0029VbC3NrUKLaHp8JAt7v3y' },
   { label: 'Indian Jobs', href: 'https://whatsapp.com/channel/0029Vb8ARN82f3ENIUrBEB3u' },
 ];
 
 const telegramChannels = [
-  { label: 'Nigeria', href: 'https://t.me/+1YYoQJdLzzkwNDI0' },
-  { label: 'Gulf Jobs', href: 'https://t.me/+dxmM9_THQnY3Y2M0' },
   { label: 'Global Jobs', href: 'https://t.me/+nK6OHg9ksAthOTc0' },
+  { label: 'Gulf Jobs', href: 'https://t.me/+dxmM9_THQnY3Y2M0' },
+  { label: 'Nigerian Jobs', href: 'https://t.me/+1YYoQJdLzzkwNDI0' },
 ];
 
 export default function WhatsAppFloatButton() {

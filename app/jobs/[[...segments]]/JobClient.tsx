@@ -67,6 +67,10 @@ const FEATURED_QUIZZES = [
 // NOTE: Replace / add new blog URLs here. Remove the Nigerian-specific ones
 // and add Gulf-relevant articles. All entries are eligible for random selection.
 const ALL_BLOGS = [
+  { title: 'Why You Are Not Getting Job Offers', url: '/blog/why-you-are-not-getting-job-offers' },
+  { title: 'Master Salary Negotiation Guide', url: '/blog/master-salary-negotiation-guide' },
+  { title: "Why You Don't Hear Back After Interviews", url: '/blog/why-dont-hear-back-after-interviews' },
+  { title: '10-Minute Resume Fix to Increase Interviews', url: '/blog/10-minute-resume-fix-increase-interviews' },
   { title: 'How to Write a CV with No Experience', url: '/blog/write-a-cv-with-no-experience-beginners-guide' },
   { title: "How to Answer 'Tell Me About Yourself' in Job Interviews", url: '/blog/tell-me-about-yourself-job-interview-nigeria' },
   { title: '30 Common Bank Interview Questions', url: '/blog/bank-interview-questions-nigeria-ace-job' },
@@ -899,9 +903,9 @@ export default function JobClient({ job, relatedJobs, companies }: {
       </div>
       <div className="flex flex-wrap gap-2">
         {[
-          { label: 'Nigerian Jobs', href: 'https://whatsapp.com/channel/0029VbC3NrUKLaHp8JAt7v3y' },
-          { label: 'Gulf Jobs', href: 'https://whatsapp.com/channel/0029VbCym2i7DAWx9oGcIV11' },
           { label: 'Global Jobs', href: 'https://whatsapp.com/channel/0029VbCmGF10Qeanq3dje41Z' },
+          { label: 'Gulf Jobs', href: 'https://whatsapp.com/channel/0029VbCym2i7DAWx9oGcIV11' },
+          { label: 'Nigerian Jobs', href: 'https://whatsapp.com/channel/0029VbC3NrUKLaHp8JAt7v3y' },
           { label: 'Indian Jobs', href: 'https://whatsapp.com/channel/0029Vb8ARN82f3ENIUrBEB3u' },
         ].map(({ label, href }) => (
           <a
@@ -927,9 +931,9 @@ export default function JobClient({ job, relatedJobs, companies }: {
       </div>
       <div className="flex flex-wrap gap-2">
         {[
+          { label: 'Global Jobs', href: 'https://t.me/+nK6OHg9ksAthOTc0' },
           { label: 'Nigerian Jobs', href: 'https://t.me/+1YYoQJdLzzkwNDI0' },
           { label: 'Gulf Jobs', href: 'https://t.me/+dxmM9_THQnY3Y2M0' },
-          { label: 'Global Jobs', href: 'https://t.me/+nK6OHg9ksAthOTc0' },
         ].map(({ label, href }) => (
           <a
             key={label}
