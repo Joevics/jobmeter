@@ -27,7 +27,7 @@ const KNOWN_COUNTRY_SLUGS = [
   'equatorial-guinea','cape-verde','sao-tome-and-principe','lesotho',
   'eswatini','comoros','burundi','car','south-sudan','sudan','libya',
   'tunisia','algeria','mali','niger','chad','burkina-faso','mauritius',
-  'seychelles','somalia','madagascar','malawi','mozambique','global',
+  'seychelles','somalia','madagascar','malawi','mozambique'
 ];
 
 const countryPattern = KNOWN_COUNTRY_SLUGS.join('|');
@@ -119,17 +119,6 @@ const nextConfig = {
         source: '/offline.html',
         destination: '/',
         permanent: false,
-      },
-
-      // ─── Legacy job URL redirect ───────────────────────────────────────────
-      // Redirects old /jobs/[slug] URLs (no country segment) to /jobs/global/[slug].
-      // Only fires when the first path segment is NOT a known country slug,
-      // NOT a structural path (Location, state), and NOT a two-segment path
-      // already in the [country]/[slug] format.
-      {
-        source: `/jobs/:slug((?!(?:${countryPattern})(?:/|$))(?!Location|state)[^/]+)`,
-        destination: '/jobs/global/:slug',
-        permanent: true,
       },
     ];
   },
