@@ -5,8 +5,8 @@ import JobList from '@/components/jobs/JobList';
 import { Metadata } from 'next';
 import { cache } from 'react';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = false;
-export const dynamic = 'force-static';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jobmeter.app';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
