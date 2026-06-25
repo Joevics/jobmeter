@@ -137,6 +137,8 @@ export async function generateMetadata({
       alternates: {
         canonical: `${siteUrl}/jobs`,
       },
+      // The /jobs listing page is always indexable
+      robots: { index: true, follow: true },
     };
   }
 
@@ -148,11 +150,16 @@ export async function generateMetadata({
     typeof job.company === 'string' ? job.company : job.company?.name || 'Company';
   const titleCore = `${job.title} at ${companyName}`;
   const description = job.description?.replace(/<[^>]*>/g, '').slice(0, 160) || '';
-  const isNoIndex = job.status === 'expired';
 
   const countrySlug = getJobCountrySlug(job);
   const canonicalUrl = `${siteUrl}/jobs/${countrySlug}/${job.slug || job.id}`;
 
+  // ── Indexing strategy ──────────────────────────────────────────────────────
+  // ALL job pages are indexed — including expired ones.
+  // Expired pages still have value: they show related jobs and pass link equity.
+  // The /jobs listing page and country paths reduce keyword overlap, so
+  // cannibalization is not a concern here.
+  // ──────────────────────────────────────────────────────────────────────────
   return {
     title: titleCore,
     description,
@@ -171,9 +178,7 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
     },
-    robots: isNoIndex
-      ? { index: false, follow: true }
-      : { index: true, follow: true },
+    robots: { index: true, follow: true },
   };
 }
 
