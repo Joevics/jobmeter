@@ -21,7 +21,8 @@ function buildJobUrl(job: { slug: string; country: string[] | null; created_at: 
 }
 
 /**
- * Paginated job sitemap
+ * Paginated job sitemap — includes active, expired_indexed, and expired jobs.
+ * Expired job pages still serve related jobs and should remain indexed.
  * Place at: app/sitemap-jobs/[page]/route.ts
  */
 export async function GET(
@@ -49,8 +50,8 @@ export async function GET(
 
     const { data: jobs, error } = await supabase
       .from(JOBS_TABLE)
-      .select('slug, updated_at, country, created_at')
-      .in('status', ['active', 'expired_indexed'])
+      .select('slug, updated_at, country, created_at, status')
+      .in('status', ['active', 'expired_indexed', 'expired'])
       .range(from, to)
       .order('created_at', { ascending: false });
 
@@ -68,12 +69,17 @@ export async function GET(
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${jobs
-  .map((job) => `  <url>
+  .map((job) => {
+    // Active jobs get full priority; expired get slightly lower but still indexed
+    const priority = job.status === 'active' ? '0.8' : '0.5';
+    const changefreq = job.status === 'active' ? 'daily' : 'weekly';
+    return `  <url>
     <loc>${buildJobUrl(job)}</loc>
     <lastmod>${job.updated_at ? new Date(job.updated_at).toISOString() : new Date().toISOString()}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>`)
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`;
+  })
   .join('\n')}
 </urlset>`;
 
@@ -90,3 +96,4 @@ ${jobs
 }
 
 export const revalidate = 3600;
+               
