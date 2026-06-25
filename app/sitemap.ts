@@ -3,6 +3,7 @@ import { MetadataRoute } from 'next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jobmeter.app';
 const JOBS_PER_SITEMAP = 1000;
+const JOBS_TABLE = 'jobs_nigeria';
 
 /**
  * Main sitemap index
@@ -17,13 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
-      url: `${siteUrl}/sitemap-categories.xml`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${siteUrl}/sitemap-locations.xml`,
+      url: `${siteUrl}/sitemap-category.xml`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
@@ -59,10 +54,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+    // Count ALL indexable jobs: active + expired (expired still serve related jobs)
     const { count, error } = await supabase
-      .from('jobs')
+      .from(JOBS_TABLE)
       .select('*', { count: 'exact', head: true })
-      .in('status', ['active', 'expired_indexed']);
+      .in('status', ['active', 'expired_indexed', 'expired']);
 
     if (error) {
       console.error('Error counting jobs:', JSON.stringify(error));
@@ -83,7 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${siteUrl}/sitemap-jobs/${i + 1}.xml`,
         lastModified: new Date(),
         changeFrequency: 'hourly' as const,
-        priority: 1,
+        priority: 0.8,
       })
     );
 
